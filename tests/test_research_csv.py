@@ -21,6 +21,8 @@ class CSVTests(unittest.TestCase):
         self.assertTrue(data['data'].startswith(b'\xef\xbb\xbf'))
         rows=list(csv.DictReader(io.StringIO(data['data'].decode('utf-8-sig'))))
         self.assertEqual(rows[0]['hostname'],"'=evil")
+        self.assertEqual(list(rows[0])[-1], 'Block')
+        self.assertTrue(all(r['Block'] == '' for r in rows))
         self.assertEqual(rows[0]['new_to_history'],'no');self.assertEqual(rows[1]['new_to_history'],'yes')
         self.assertEqual(rows[0]['window_start_utc'],'2026-01-01T01:00:00Z')
         self.assertEqual(data['filename'],'pihole-research-needed-2026-01-02-aaaaaaaaaaaaaaaa.csv')
@@ -68,6 +70,31 @@ class CSVTests(unittest.TestCase):
             self.assertTrue(all(path.exists() for path in snapshots[1:]))
             self.assertTrue(unowned.exists())
             self.assertEqual(csv_path.read_bytes(),artifact['data'])
+
+    def test_block_column_always_blank_without_importing_decisions(self):
+        for supplied in ('0', '1', '', None):
+            source=row();source['Block']=supplied
+            artifact=c.render_csv(detail([source]),'fixture')
+            rows=list(csv.DictReader(io.StringIO(artifact['data'].decode('utf-8-sig'))))
+            self.assertEqual(rows[0]['Block'],'')
+        header=next(csv.reader(io.StringIO(c.render_csv(detail(),'empty')['data'].decode('utf-8-sig'))))
+        self.assertEqual(header[-1],'Block')
+    def test_existing_user_review_edits_are_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();config=BackupConfig('owner@example.invalid',root,root,root/'prefs',14)
+            artifact=c.render_csv(detail([row('one.example'),row('two.example'),row('three.example')]),'a'*64)
+            rows=list(csv.DictReader(io.StringIO(artifact['data'].decode('utf-8-sig'))))
+            for record,decision in zip(rows,('1','0','')):record['Block']=decision
+            output=io.StringIO(newline='');writer=csv.DictWriter(output,fieldnames=c.COLUMNS)
+            writer.writeheader();writer.writerows(rows);edited=output.getvalue().encode('utf-8-sig')
+            target=root/artifact['filename'];target.write_bytes(edited)
+            with patch.object(c,'preflight_backup',return_value={'status':'ready'}):
+                with self.assertRaises(DeliveryError):c.export_csv(artifact['data'],artifact['filename'],config,export=True)
+                self.assertEqual(target.read_bytes(),edited)
+                later=c.render_csv(detail([row('new.example')]),'b'*64)
+                c.export_csv(later['data'],later['filename'],config,export=True)
+            self.assertEqual(target.read_bytes(),edited)
+            self.assertEqual((root/later['filename']).read_bytes(),later['data'])
 
     def test_worker_uses_bounded_owned_transport(self):
         with patch.object(c,'run_backup_worker',return_value={}) as worker:

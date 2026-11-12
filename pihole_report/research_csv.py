@@ -13,7 +13,7 @@ import tempfile
 from .delivery import BackupConfig, DeliveryError, preflight_backup, run_backup_worker
 
 COLUMNS=('hostname','cache_status','new_to_history','review_reason','review_action',
-         'window_start_utc','window_end_exclusive_utc')
+         'window_start_utc','window_end_exclusive_utc','Block')
 
 
 def safe_cell(value):
@@ -46,7 +46,7 @@ def render_csv(detail, snapshot_id):
         new=row['new_to_history']
         if new is not None and type(new) is not bool: raise ValueError('Invalid history flag')
         writer.writerow([safe_cell(v) for v in (row['hostname'],row['cache_status'],
-            'unknown' if new is None else 'yes' if new else 'no',row['reason'],row['action'],start,end)])
+            'unknown' if new is None else 'yes' if new else 'no',row['reason'],row['action'],start,end,'')])
     data=out.getvalue().encode('utf-8-sig')
     name=f"pihole-research-needed-{parsed[1].astimezone(timezone.utc).date().isoformat()}-{snapshot_id[:16]}.csv"
     return dict(data=data,filename=name,sha256=hashlib.sha256(data).hexdigest(),row_count=len(rows),

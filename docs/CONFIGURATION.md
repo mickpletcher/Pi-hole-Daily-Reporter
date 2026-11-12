@@ -129,3 +129,8 @@ Only the frozen current report list is exported. Previously delivered mail and
 completed history backups are not repeated to recover a failed CSV. All CSVs are
 retained; choosing a future deletion policy requires an explicit decision separate
 from the existing JSON-log and SQLite-snapshot retention settings.
+
+Version 0.5.1 appends an empty `Block` column to every new CSV. This is a manual
+review field: `1` means block, `0` means do not block, and blank means undecided.
+The reporter does not infer or apply these decisions, import edited CSVs, or
+overwrite existing files. Manual edits remain untouched.

@@ -1,6 +1,6 @@
 [project]
 name = "pihole-local-report"
-version = "0.5.0"
+version = "0.5.1"
 description = "Local-only Pi-hole history and daily reports, manifest-gated Python application"
 requires-python = ">=3.11"
 dependencies = []

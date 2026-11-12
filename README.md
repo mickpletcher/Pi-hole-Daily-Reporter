@@ -111,3 +111,8 @@ CSVs are retained until explicitly removed. The 30-day JSON-log cleanup and
 SQLite-snapshot retention do not delete CSVs. Generated CSVs and all real examples
 belong outside Git and are ignored. Version 0.5 adds this behavior; existing private
 installations require their own reviewed, manifest-bound deployment.
+
+Version 0.5.1 appends an empty `Block` column to every new CSV. This is a manual
+review field: `1` means block, `0` means do not block, and blank means undecided.
+The reporter does not infer or apply these decisions, import edited CSVs, or
+overwrite existing files. Manual edits remain untouched.
