@@ -27,6 +27,8 @@ from .pipeline import _run_daily
 from .runlog import prune_logs, write_log
 from .storage import parse_timestamp
 
+from .research_csv import render_csv, run_csv_worker, inspect_csv
+
 CONFIG = PROJECT / "config/production.json"
 SCHEMA = "pihole-production.v1"
 
@@ -260,7 +262,7 @@ def _recover_collection(scope, transport, password, now):
 
 def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
              backup=None, secret_reader=read_secret, now=None, log_root=PROJECT,
-             recover_collection=_recover_collection, backup_worker=run_backup_worker):
+             recover_collection=_recover_collection, backup_worker=run_backup_worker, csv_worker=None):
     """Recover independent stages without repeating accepted or uncertain sends.
 
     `backup` is a test-only synchronous adapter injection. Real operation always
@@ -301,7 +303,7 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                 _atomic(state_file, json.dumps(ledger, indent=2) + "\n")
                 health = {"schema": "pihole-operational-health.v1", "local_date": local_date,
                     "status": overall, "started_at_epoch": started, "updated_at_epoch": tick(),
-                    "stages": entry["stages"], "smtp_state": entry["stages"]["email"]["status"],
+                    "stages": dict(entry["stages"], csv=entry.get("csv", {"status":"pending"})), "smtp_state": entry["stages"]["email"]["status"],
                     "artifact_snapshot_id": entry.get("artifact", {}).get("snapshot_id"),
                     "data_health": entry.get("artifact_data_health"),
                     "data_health_scope": "frozen_report_artifact",
@@ -364,6 +366,15 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                     "context_sha256": _digest(frozen_dir / "report-context.json"),
                     "snapshot_id": produced.get("snapshot_id")}
                 entry["artifact_data_health"] = produced.get("data_health", detail.get("data_health"))
+                # Freeze the CSV alongside the exact report/context before SMTP.
+                # A malformed CSV detail must not suppress the readable email.
+                try:
+                    frozen_csv = render_csv(detail, produced.get("snapshot_id"))
+                    _atomic(frozen_dir / "research-needed.csv", frozen_csv["data"].decode("utf-8"))
+                    entry["csv"] = dict(status="pending", attempts=0,
+                        **{k:v for k,v in frozen_csv.items() if k != "data"})
+                except Exception:
+                    entry["csv"] = dict(status="failed", attempts=0,error_code="csv_freeze_failed")
                 finish("report", "complete")
                 changed = True
             elif stages["report"]["status"] == "complete":
@@ -390,6 +401,9 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                               backup={"status": "legacy_untracked", "cloud_upload_confirmed": False},
                               stage_details=stages,
                               migration_note=entry.get("migration_note", "Prior delivery guard retained"))
+                entry["csv"] = {"status":"legacy_untracked"}
+                result["csv"] = {"status":"legacy_untracked", "cloud_upload_confirmed":False}
+                result["csv_published_locally"] = None
                 persist(result["status"])
                 return result
 
@@ -483,6 +497,55 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                            error_code="backup_stage_failed")
                 changed = True
 
+            # CSV is independently recoverable. No CSV retry can resend SMTP or
+            # repeat an already successful SQLite publication.
+            csv_stage = entry.setdefault("csv", {"status": "pending", "attempts": 0})
+            if (not isinstance(csv_stage, dict)
+                    or csv_stage.get("status") not in {"pending","failed","reserved","uncertain","complete","invalid"}
+                    or type(csv_stage.get("attempts")) is not int or csv_stage["attempts"] < 0):
+                csv_stage = {"status":"invalid", "attempts":0, "error_code":"csv_state_requires_inspection"}
+                entry["csv"] = csv_stage
+                persist()
+            if csv_stage["status"] not in {"complete", "invalid"}:
+                try:
+                    artifact = render_csv(detail, entry["artifact"]["snapshot_id"])
+                    source = frozen_dir / "research-needed.csv"
+                    if csv_stage.get("sha256") not in (None, artifact["sha256"]):
+                        raise DeliveryError("frozen_csv_changed", uncertain=True)
+                    if not source.exists():
+                        # Atomic private write; immutable bytes subsequently verified.
+                        _atomic(source, artifact["data"].decode("utf-8"))
+                    if not inspect_csv(source, artifact["data"]):
+                        raise DeliveryError("frozen_csv_missing", uncertain=True)
+                    csv_stage.update({k:v for k,v in artifact.items() if k != "data"})
+                    csv_stage["path"] = str(Path(scope["backup_destination"]) / artifact["filename"])
+                    persist()
+                    if csv_stage["status"] in {"reserved", "uncertain"} and csv_stage.get("worker_pid"):
+                        try: os.kill(csv_stage["worker_pid"], 0)
+                        except ProcessLookupError: pass
+                        except PermissionError: raise DeliveryError("previous_csv_worker_may_be_running", uncertain=True) from None
+                        else: raise DeliveryError("previous_csv_worker_may_be_running", uncertain=True)
+                    csv_stage.update(status="reserved", started_at_epoch=tick(), attempts=csv_stage["attempts"] + 1)
+                    persist()
+                    def register_csv(pid):
+                        csv_stage["worker_pid"] = pid
+                        persist()
+                    published = (csv_worker or run_csv_worker)({"local_date":local_date,"sha256":artifact["sha256"]}, on_start=register_csv)
+                    if (published.get("exported") is not True or published.get("status") != "published_locally"
+                            or published.get("path") != csv_stage["path"]):
+                        raise DeliveryError("csv_publication_unconfirmed", uncertain=True)
+                    csv_stage.update(status="complete", cloud_upload_confirmed=False, reconciled=published.get("reconciled",False))
+                except DeliveryError as error:
+                    csv_stage.update(status="uncertain" if error.uncertain else "failed",error_code=error.code)
+                except Exception:
+                    csv_stage.update(status="uncertain" if csv_stage["status"] == "reserved" else "failed", error_code="csv_stage_failed")
+                csv_stage["finished_at_epoch"] = tick()
+                csv_stage["duration_seconds"] = max(0,tick()-csv_stage.get("started_at_epoch",tick()))
+                persist()
+                changed = True
+            result["csv_published_locally"] = csv_stage["status"] == "complete"
+            result["csv"] = dict(csv_stage, cloud_upload_confirmed=False)
+
             email_state = stages["email"]["status"]
             result.update(smtp_submitted=email_state in {"submitted", "legacy_submitted"},
                 smtp_outcome_uncertain=email_state in {"reserved", "uncertain", "unconfirmed"},
@@ -493,7 +556,7 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                 stage_details=stages, artifact_snapshot_id=entry["artifact"].get("snapshot_id"),
                 recovered_history=entry.get("recovered_history"))
             success = (result["smtp_submitted"] and result["backup_published_locally"]
-                       and stages["collection"]["status"] == "complete")
+                       and stages["collection"]["status"] == "complete" and result["csv_published_locally"])
             quality_complete = stages["collection"].get("coverage_status") == "complete"
             result["status"] = ("delivery_suppressed" if not changed and success and quality_complete
                                 else "complete" if success and quality_complete and not result["warnings"] else "partial")

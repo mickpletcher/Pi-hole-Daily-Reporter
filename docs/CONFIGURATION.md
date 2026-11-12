@@ -115,3 +115,17 @@ New databases do not inherit another installation's historical protection audit
 or telemetry decisions. Supply local protected-domain/list inputs and import only
 valid, authorized history/evidence. Unknown current rule state remains unknown.
 Do not convert a public domain-family guess into verified exact-hostname research.
+
+
+## CSV destination and retention
+
+The daily research-needed CSV uses the same explicitly declared OneDrive account
+and backup destination. Review this readable-data export together with database
+backup authorization before enabling production. No extra destination or automatic
+research service is used. A CSV stage result records its filename, row count and
+checksum; it does not place hostname contents in process arguments.
+
+Only the frozen current report list is exported. Previously delivered mail and
+completed history backups are not repeated to recover a failed CSV. All CSVs are
+retained; choosing a future deletion policy requires an explicit decision separate
+from the existing JSON-log and SQLite-snapshot retention settings.

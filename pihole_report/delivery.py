@@ -352,7 +352,7 @@ def inspect_backup(config, planned_at, operation_id, source_digest):
             "reconciled": True, "cloud_upload_confirmed": False}
 
 
-def run_backup_worker(request, *, timeout=90, popen=subprocess.Popen, on_start=None, killpg=os.killpg):
+def run_backup_worker(request, *, timeout=90, popen=subprocess.Popen, on_start=None, killpg=os.killpg, _worker_module="pihole_report.delivery"):
     """Own a short-lived child; never terminate any pre-existing process.
 
     The request contains only approved local paths and operation identifiers.
@@ -362,11 +362,13 @@ def run_backup_worker(request, *, timeout=90, popen=subprocess.Popen, on_start=N
     import sys
     import signal
     from .cli import PROJECT
+    if _worker_module not in {"pihole_report.delivery", "pihole_report.research_csv"}:
+        raise ValueError("Unsupported owned worker")
     if not 0 < timeout <= 300:
         raise ValueError("Backup worker timeout must be bounded")
     environment = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()),
                    "PYTHONPATH": str(PROJECT), "PYTHONDONTWRITEBYTECODE": "1"}
-    child = popen([sys.executable, "-m", "pihole_report.delivery", "--backup-worker"],
+    child = popen([sys.executable, "-m", _worker_module, "--backup-worker"],
                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                   text=True, cwd=PROJECT, env=environment, start_new_session=True)
     def stop_owned_group():

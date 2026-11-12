@@ -91,3 +91,23 @@ is not proof of cloud upload. Verify those outcomes separately.
 
 The public source is independently tested after privacy sanitization. It is not
 installed into or automatically synchronized with any live deployment.
+
+
+## Readable daily CSV review list
+
+Each configured daily run also publishes a readable research-needed CSV to its
+approved OneDrive backup folder. This uses the exact frozen report window's list,
+not the cumulative queue. Columns include hostname, cache status, new-to-history,
+review reason/action and UTC window bounds. Hostnames are not converted into
+invented full URLs. Files are UTF-8 with a BOM, quoted for Excel, sorted by hostname
+and protected against spreadsheet formulas. An empty list still has a header.
+
+Names follow `pihole-research-needed-YYYY-MM-DD-<snapshot-prefix>.csv`. Different
+content at an existing name is never overwritten; identical bytes can be verified
+and reused. CSV failures recover independently without resending email or repeating
+a successful SQLite backup. Local publication is distinct from confirmed upload.
+
+CSVs are retained until explicitly removed. The 30-day JSON-log cleanup and
+SQLite-snapshot retention do not delete CSVs. Generated CSVs and all real examples
+belong outside Git and are ignored. Version 0.5 adds this behavior; existing private
+installations require their own reviewed, manifest-bound deployment.

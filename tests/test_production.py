@@ -21,6 +21,12 @@ class ProductionTests(unittest.TestCase):
         from pihole_report.storage import connect
         fixture_db=connect(self.root/'data/pihole-history/history.sqlite')
         fixture_db.close()
+        def csv_fixture(request, **kwargs):
+            state=json.loads(self.state.read_text())
+            csv=state['dates'][self.day]['csv']
+            return {'exported':True,'status':'published_locally','path':csv['path']}
+        csv_patch=patch.object(p,'run_csv_worker',side_effect=csv_fixture)
+        csv_patch.start();self.addCleanup(csv_patch.stop)
         self.scope = __import__("pihole_report.deployment",fromlist=["example_deployment"]).example_deployment()["scope"]
         self.scope.update(root=str(self.root), database=str(self.root/'data/pihole-history/history.sqlite'),
             report=str(self.root/'memory/pihole-domain-review.md'), state_directory=str(self.base/'state/production'),
@@ -42,11 +48,14 @@ class ProductionTests(unittest.TestCase):
         self.calls.append('engine')
         self.assertIsNone(kwargs['unifi_transport'])
         kwargs['write_text'](Path(self.scope['report']), '# fixture report\n')
-        return {'collection_status':self.collection,'snapshot_id':'fixture'}, {'research':{'research_needed_count':1}}
+        return {'collection_status':self.collection,'snapshot_id':'fixture'}, {'research':{'research_needed_count':1,'research_needed':[dict(hostname='host.example',cache_status='uncached',new_to_history=True,reason='fixture',action='manual research')]},'daily_totals':dict(window_start='2026-01-01T00:00:00Z',window_end_exclusive='2026-01-02T00:00:00Z')}
     def send(self,*args,**kwargs):
         self.calls.append('send')
         state=json.loads(self.state.read_text())
         self.assertEqual(state['dates'][self.day]['status'],'reserved')
+        frozen_csv=Path(self.scope['state_directory'])/'artifacts'/self.day/'research-needed.csv'
+        self.assertTrue(frozen_csv.is_file())
+        self.assertTrue(frozen_csv.read_bytes().startswith(b'\xef\xbb\xbf'))
         self.assertTrue(kwargs['send'])
         if self.crash:
             raise KeyboardInterrupt('simulated hard interruption')
@@ -66,6 +75,35 @@ class ProductionTests(unittest.TestCase):
         return p._execute(self.manifest,engine=self.engine,transport=lambda *a:None,
             send=self.send,backup=self.backup,secret_reader=lambda *a:'synthetic',
             now=self.now,log_root=self.base,recover_collection=self.recover)
+
+    def test_malformed_csv_state_is_held_without_resending(self):
+        self.run_it()
+        ledger=json.loads(self.state.read_text())
+        ledger['dates'][self.day]['csv']='invalid fixture'
+        self.state.write_text(json.dumps(ledger))
+        result=self.run_it()
+        self.assertEqual(result['csv']['status'],'invalid')
+        self.assertEqual(self.calls.count('send'),1)
+        self.assertEqual(self.calls.count('backup'),1)
+
+    def test_csv_failure_recovers_without_email_or_backup_repeat(self):
+        with patch.object(p,'run_csv_worker',side_effect=DeliveryError('csv_fixture_failed')):
+            first=self.run_it()
+        self.assertEqual(first['csv']['status'],'failed')
+        second=self.run_it()
+        self.assertTrue(second['csv_published_locally'])
+        self.assertEqual(self.calls.count('send'),1)
+        self.assertEqual(self.calls.count('backup'),1)
+        self.assertEqual(self.calls.count('engine'),1)
+
+    def test_uncertain_csv_is_idempotently_reconciled(self):
+        with patch.object(p,'run_csv_worker',side_effect=DeliveryError('csv_fixture_uncertain',uncertain=True)):
+            first=self.run_it()
+        self.assertEqual(first['csv']['status'],'uncertain')
+        second=self.run_it()
+        self.assertTrue(second['csv_published_locally'])
+        self.assertEqual(self.calls.count('send'),1)
+        self.assertEqual(self.calls.count('backup'),1)
 
     def test_success_and_repeat_date(self):
         first=self.run_it()
@@ -314,6 +352,10 @@ class ProductionTests(unittest.TestCase):
             with self.assertRaises(ValueError): p.load_manifest(config)
 
 class ProductionEndToEndTests(unittest.TestCase):
+    def setUp(self):
+        worker=patch.object(p,'run_csv_worker',return_value={'exported':False})
+        worker.start();self.addCleanup(worker.stop)
+
     def test_real_pipeline_with_fixture_transport_and_mock_delivery(self):
         from pihole_report.pipeline import _run_daily
         from pihole_report.storage import connect

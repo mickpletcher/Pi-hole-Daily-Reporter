@@ -254,3 +254,6 @@ __marimo__/
 /runtime/
 /secrets/
 /backups/
+
+# Generated review lists contain private DNS observations.
+*.csv

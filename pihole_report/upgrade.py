@@ -65,18 +65,19 @@ def worker_guard(spec):
         return
     state = private_json(path)
     for entry in state.get('dates', {}).values():
-        backup = entry.get('stages', {}).get('backup', {})
-        pid = backup.get('worker_pid')
-        if isinstance(pid, int) and pid > 0:
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:
-                continue
-            except PermissionError:
-                pass
-            m.fail('possible_backup_worker_alive')
-        if backup.get('status') in ('reserved', 'uncertain', 'preparing', 'running'):
-            m.fail('backup_outcome_requires_inspection')
+        for backup in (entry.get('stages', {}).get('backup', {}), entry.get('csv', {})):
+            pid = backup.get('worker_pid')
+            if isinstance(pid, int) and pid > 0:
+                try:
+                    os.kill(pid, 0)
+                except ProcessLookupError:
+                    pass
+                except PermissionError:
+                    m.fail('possible_backup_worker_alive')
+                else:
+                    m.fail('possible_backup_worker_alive')
+            if backup.get('status') in ('reserved', 'uncertain', 'preparing', 'running'):
+                m.fail('backup_outcome_requires_inspection')
 
 
 def baseline(spec):
