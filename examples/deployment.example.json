@@ -1,0 +1,37 @@
+{
+  "schema": "pihole-deployment.v1",
+  "enabled": false,
+  "scope": {
+    "root": "/opt/pihole-reporter/runtime",
+    "database": "/opt/pihole-reporter/runtime/data/pihole-history/history.sqlite",
+    "report": "/opt/pihole-reporter/runtime/memory/pihole-domain-review.md",
+    "site": "Primary",
+    "pihole_base": "https://pihole.example.invalid",
+    "pihole_ip": "192.0.2.53",
+    "pihole_tls_name": "pihole.example.invalid",
+    "pihole_ca": "/opt/pihole-reporter/runtime/config/pihole-ca.pem",
+    "pihole_password_file": "/opt/pihole-reporter/runtime/secrets/pihole-password",
+    "smtp_host": "smtp.example.invalid",
+    "smtp_port": 587,
+    "smtp_sender": "sender@example.invalid",
+    "smtp_recipient": "recipient@example.invalid",
+    "smtp_password_file": "/opt/pihole-reporter/runtime/secrets/smtp-password",
+    "backup_account": "owner@example.invalid",
+    "backup_root": "/opt/pihole-reporter/runtime/OneDrive",
+    "backup_destination": "/opt/pihole-reporter/runtime/OneDrive/Pi-hole Backups/Primary",
+    "backup_preferences": "/opt/pihole-reporter/runtime/config/onedrive-preferences.plist",
+    "backup_retention": 14,
+    "research_mode": "cache-only",
+    "unifi_mode": "cached-only",
+    "legacy_stdout": "/opt/pihole-reporter/runtime/logs/legacy.log",
+    "state_directory": "/opt/pihole-reporter/state/production"
+  },
+  "scheduler": {
+    "project": "/opt/pihole-reporter",
+    "manifest": "/opt/pihole-reporter/config/production.json",
+    "database": "/opt/pihole-reporter/runtime/data/pihole-history/history.sqlite",
+    "wrapper": "/opt/pihole-reporter/runtime/bin/run-daily-review",
+    "plist": "/opt/pihole-reporter/runtime/config/org.example.pihole-domain-review.plist",
+    "python": "/usr/local/bin/python3"
+  }
+}

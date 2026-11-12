@@ -1,2 +1,93 @@
 # Pi-hole-Daily-Reporter
 A Python application that collects Pi-hole DNS activity, tracks domain history, and generates daily reports with automated backups.
+
+
+## What it does
+
+- Collects fixed-window Pi-hole DNS observations into local SQLite history.
+- Keeps cumulative measured counts separate from overlapping daily snapshots.
+- Reports allowed/blocked query totals, distinct hostnames, time coverage and gaps.
+- Attributes sampled client requests to their exact allowed/blocked outcome.
+- Reuses verified local research. It does not automatically call an AI service,
+  research provider, or change Pi-hole rules.
+- Records research-needed hostnames, input freshness and operational stage status.
+- Can deliver a compressed report over verified SMTP TLS and export verified
+  snapshots to an explicitly configured local OneDrive folder.
+- Recovers collection and backup stages independently while conservatively
+  preventing duplicate email after known or uncertain submission.
+
+DNS queries are not website visits, and hostnames are not complete URLs.
+A hostname can be both allowed and blocked. API exclusions, privacy settings,
+retention gaps and the intentional recent collection delay are reported rather
+than treated as complete network visibility.
+
+## Requirements and tests
+
+Python 3.11 or newer; the application uses only the Python standard library.
+The production scheduler and OneDrive integration are macOS-specific. No local
+installation, account, device inventory or DNS history is included here.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
+python3 -m pihole_report --help
+python3 -m pihole_report health
+```
+
+Tests use temporary synthetic data and injected transports. They do not send
+email, access real credentials, export a cloud backup or run a scheduled job.
+`health` reads a small local status snapshot without network requests or retries;
+before a production run creates that snapshot, it reports unavailable.
+
+## Configuration and deployment
+
+This repository is a privacy-clean, portable source distribution. Installation-
+specific accounts, addresses, policy exceptions, old audit evidence and operational
+records were intentionally excluded. It is not a backup of a live installation.
+
+Start with the disabled example under `examples/`. Local deployment configuration
+and the enabled production manifest must never be committed. Use owner-only
+permissions, separately stored credential files, a verified CA and an explicit
+approved destination. A production manifest must match both the declared local
+scope and the reviewed module hashes; source changes invalidate its old hashes.
+See [configuration](docs/CONFIGURATION.md) and [safety and privacy](docs/PRIVACY.md).
+
+The ordinary CLI's report-writing commands are confined to private shadow copies
+inside this checkout. Start with a consistent copy of an existing compatible
+history and validate there. Keep active SQLite databases outside synced storage.
+A source checkout or test pass does not authorize a production switch, message,
+backup upload, certificate bypass or schedule change.
+
+Do not reload an existing launchd job just to update code. A job with `RunAtLoad`
+can execute immediately on reload. Source migration/upgrade helpers have separate
+read-only plans, explicit execution, locks and conservative rollback guards.
+Always review a plan and preserve the live delivery ledger and newer history.
+
+## Recovery and retention
+
+- Submitted or uncertain email is held instead of automatically resent.
+- Known non-submission can reuse a verified frozen report; recovered history does
+  not silently change the report already delivered.
+- Backup work follows email in a bounded owned process group. An uncertain backup
+  is reconciled by operation identity before a retry.
+- A new local date has independent stages. There is no automatic retry loop.
+- Recognized application run logs are removed at 30 days when a report runs.
+  Unrelated files, malformed logs and links are not deleted.
+- Historical databases, validation archives and frozen recovery artifacts are not
+  subject to that log cleanup. Frozen artifacts currently need a separately
+  chosen retention policy.
+
+SMTP acceptance is not proof of inbox receipt. Publication in a synced folder
+is not proof of cloud upload. Verify those outcomes separately.
+
+## Source layout
+
+| Module | Responsibility |
+|---|---|
+| `storage`, `collector`, `coverage` | Transactions, deduplication, bounded collection and interval evidence |
+| `report`, `runlog`, `health` | Deterministic reports, cached research, counts, logs and local health |
+| `integrations`, `delivery` | Verified HTTPS, snapshots, inventory/list inputs, SMTP and backup adapters |
+| `pipeline`, `production`, `cli` | Shadow execution, explicit deployment gates and independent stages |
+| `migration`, `upgrade` | Planned source transitions, archival receipts and delivery-safe rollback |
+
+The public source is independently tested after privacy sanitization. It is not
+installed into or automatically synchronized with any live deployment.

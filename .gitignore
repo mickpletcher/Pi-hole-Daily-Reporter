@@ -218,3 +218,39 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Application runtime and private deployment data. Examples live under examples/.
+/config/
+/data/
+/memory/
+/state/
+/logs/
+/.validation/
+/.publication/
+/.source-*/
+/.tests-*/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.collector-lock
+*.zip
+*.gz
+*.pem
+*.key
+*.p12
+*.pfx
+*.env
+.env.*
+*-password
+*-password.*
+*credentials*
+*secret*.json
+*token*.json
+.DS_Store
+/runtime/
+/secrets/
+/backups/

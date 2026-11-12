@@ -1,0 +1,9 @@
+[project]
+name = "pihole-local-report"
+version = "0.4.0"
+description = "Local-only Pi-hole history and daily reports, manifest-gated Python application"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+pihole-report = "pihole_report.cli:main"
