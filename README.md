@@ -116,3 +116,9 @@ Version 0.5.1 appends an empty `Block` column to every new CSV. This is a manual
 review field: `1` means block, `0` means do not block, and blank means undecided.
 The reporter does not infer or apply these decisions, import edited CSVs, or
 overwrite existing files. Manual edits remain untouched.
+
+### Research CSV domain column
+
+New research CSVs start with `domain`, then `hostname`; for example `apple.com`, `click.apple.com`. Domain is the registrable domain (eTLD+1), calculated offline using the bundled Public Suffix List including private suffixes. Multi-part suffixes such as `co.uk` and separate private-platform tenants are handled correctly. IP addresses, local/invalid names and public-suffix-only inputs produce an empty domain. The hostname remains unchanged and `Block` remains blank for new exports. Existing edited CSVs are never overwritten or migrated automatically.
+
+The vendored PSL snapshot is MPL-2.0 licensed (see its header); no DNS-history data is sent to a lookup service and no runtime network fetch is needed.

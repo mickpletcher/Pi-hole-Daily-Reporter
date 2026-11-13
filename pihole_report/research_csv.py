@@ -12,7 +12,9 @@ import subprocess
 import tempfile
 from .delivery import BackupConfig, DeliveryError, preflight_backup, run_backup_worker
 
-COLUMNS=('hostname','cache_status','new_to_history','review_reason','review_action',
+from .domains import registrable_domain
+
+COLUMNS=('domain','hostname','cache_status','new_to_history','review_reason','review_action',
          'window_start_utc','window_end_exclusive_utc','Block')
 
 
@@ -25,7 +27,9 @@ def safe_cell(value):
     return text
 
 
-def render_csv(detail, snapshot_id):
+def render_csv(detail, snapshot_id, *, schema_version=2):
+    if type(schema_version) is not int or schema_version not in (1, 2):
+        raise ValueError("Unsupported CSV schema")
     research=detail['research']; rows=research['research_needed']; totals=detail['daily_totals']
     if not isinstance(rows,list) or type(research['research_needed_count']) is not int or len(rows)!=research['research_needed_count']:
         raise ValueError('Research row count mismatch')
@@ -41,15 +45,17 @@ def render_csv(detail, snapshot_id):
     names=[r['hostname'] for r in rows]
     if len(set(names))!=len(names) or any(not isinstance(n,str) or not n for n in names):
         raise ValueError('Unique nonempty hostnames required')
-    out=io.StringIO(newline=''); writer=csv.writer(out,lineterminator='\r\n',quoting=csv.QUOTE_ALL);writer.writerow(COLUMNS)
+    out=io.StringIO(newline=''); writer=csv.writer(out,lineterminator='\r\n',quoting=csv.QUOTE_ALL);writer.writerow(COLUMNS if schema_version == 2 else COLUMNS[1:])
     for row in sorted(rows,key=lambda r:r['hostname']):
         new=row['new_to_history']
         if new is not None and type(new) is not bool: raise ValueError('Invalid history flag')
-        writer.writerow([safe_cell(v) for v in (row['hostname'],row['cache_status'],
-            'unknown' if new is None else 'yes' if new else 'no',row['reason'],row['action'],start,end,'')])
+        values=(row['hostname'],row['cache_status'],
+            'unknown' if new is None else 'yes' if new else 'no',row['reason'],row['action'],start,end,'')
+        if schema_version == 2: values=(registrable_domain(row['hostname']),)+values
+        writer.writerow([safe_cell(v) for v in values])
     data=out.getvalue().encode('utf-8-sig')
     name=f"pihole-research-needed-{parsed[1].astimezone(timezone.utc).date().isoformat()}-{snapshot_id[:16]}.csv"
-    return dict(data=data,filename=name,sha256=hashlib.sha256(data).hexdigest(),row_count=len(rows),
+    return dict(schema_version=schema_version,data=data,filename=name,sha256=hashlib.sha256(data).hexdigest(),row_count=len(rows),
                 window_start_utc=start,window_end_exclusive_utc=end)
 
 
@@ -108,7 +114,8 @@ def worker_main():
         day=datetime.strptime(request['local_date'],'%Y-%m-%d').date().isoformat()
         state=Path(scope['state_directory']);entry=_private_json(state/'delivery-state.json',max_bytes=16*1024*1024)['dates'][day]
         _,context=_frozen_context(entry,state,day)
-        artifact=render_csv(context['detail'],entry['artifact']['snapshot_id'])
+        artifact=render_csv(context['detail'],entry['artifact']['snapshot_id'],
+            schema_version=entry['csv'].get('schema_version',1))
         if artifact['sha256']!=request['sha256'] or entry['csv']['sha256']!=artifact['sha256']:
             raise ValueError('Frozen CSV identity changed')
         frozen=state/'artifacts'/day/'research-needed.csv'

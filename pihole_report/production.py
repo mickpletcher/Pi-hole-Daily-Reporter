@@ -508,7 +508,8 @@ def _execute(manifest, *, engine=_run_daily, transport=None, send=send_report,
                 persist()
             if csv_stage["status"] not in {"complete", "invalid"}:
                 try:
-                    artifact = render_csv(detail, entry["artifact"]["snapshot_id"])
+                    artifact = render_csv(detail, entry["artifact"]["snapshot_id"],
+                        schema_version=csv_stage.get("schema_version", 1 if csv_stage.get("sha256") else 2))
                     source = frozen_dir / "research-needed.csv"
                     if csv_stage.get("sha256") not in (None, artifact["sha256"]):
                         raise DeliveryError("frozen_csv_changed", uncertain=True)

@@ -21,6 +21,7 @@ class CSVTests(unittest.TestCase):
         self.assertTrue(data['data'].startswith(b'\xef\xbb\xbf'))
         rows=list(csv.DictReader(io.StringIO(data['data'].decode('utf-8-sig'))))
         self.assertEqual(rows[0]['hostname'],"'=evil")
+        self.assertEqual(list(rows[0])[:2], ['domain', 'hostname'])
         self.assertEqual(list(rows[0])[-1], 'Block')
         self.assertTrue(all(r['Block'] == '' for r in rows))
         self.assertEqual(rows[0]['new_to_history'],'no');self.assertEqual(rows[1]['new_to_history'],'yes')
