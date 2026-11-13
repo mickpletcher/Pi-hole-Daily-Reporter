@@ -1,12 +1,51 @@
-# Curated external comparison sources, 2026-11-13. Not copied from Pi-hole.
-# One direct HTTPS feed URL per line. Matches are recommendations, not automatic blocks.
-# StevenBlack consolidated hosts (ads/malware); sources overlap other feeds.
+# External blocklist recommendation feeds, updated 2026-11-13.
+# Derived from the user-supplied source document plus the earlier six-feed baseline.
+# One direct current HTTPS feed URL per line. No automatic blocking.
+# Duplicate/overlapping providers are not independent votes.
+# Baseline feeds:
 https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-# OISD Small uses subdomain-aware ABP rules.
 https://small.oisd.nl
-# Peter Lowe ads/tracking hosts.
 https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-# Block List Project security categories (one provenance family).
 https://blocklistproject.github.io/Lists/alt-version/malware-nl.txt
 https://blocklistproject.github.io/Lists/alt-version/phishing-nl.txt
 https://blocklistproject.github.io/Lists/alt-version/scam-nl.txt
+
+# Additional enabled general-purpose sources from pihole-list-sources.md:
+# KADhosts
+https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt
+# FadeMind Spam Extras
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts
+# w3kbl
+https://v.firebog.net/hosts/static/w3kbl.txt
+# RooneyMcNibNug SNAFU
+https://raw.githubusercontent.com/RooneyMcNibNug/pihole-stuff/master/SNAFU.txt
+# AdAway
+https://adaway.org/hosts.txt
+# HoSTS AdBlock
+https://v.firebog.net/hosts/AdguardDNS.txt
+# FadeMind Ad Extras
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/UncheckyAds/hosts
+# Disconnect.me Simple Ad
+https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+# Disconnect.me Simple Tracking
+https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt
+# EasyPrivacy
+https://v.firebog.net/hosts/Easyprivacy.txt
+# FadeMind Tracking Extras
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.2o7Net/hosts
+# Threat Intelligence Feeds
+https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt
+# Phishing URL Blocklist
+https://phishing.army/download/phishing_army_blocklist_extended.txt
+# RPiList Phishing
+https://raw.githubusercontent.com/RPiList/specials/master/Blocklisten/Phishing-Angriffe
+# RPiList Malware
+https://raw.githubusercontent.com/RPiList/specials/master/Blocklisten/malware
+# Hagezi Pro
+https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt
+# OISD Big
+https://big.oisd.nl/
+
+# Excluded: disabled feeds; opt-in Device/Policy restrictions; immutable CNAME snapshot;
+# Matomo analytics-referrer feed; Someone Who Cares endpoint (HTTP 403 during validation).
+# HaGeZi uses current raw adblock paths, preserving subdomain-aware rules.

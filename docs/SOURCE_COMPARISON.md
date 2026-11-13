@@ -11,3 +11,9 @@ Plain domains and hosts entries match exactly. `||domain^` matches that hostname
 Limits: 128 unique sources, 64 MiB per source, four concurrent requests, verified TLS, redirects refused, 15-second socket timeout and a 240-second overall worker deadline. Failed, too-large, HTML, empty or unsupported feeds are explicit incomplete checks, never clean results. A worker timeout makes the comparison incomplete but does not prevent report/email delivery. No last-good cache is represented as current. Use direct final HTTPS endpoints if a feed redirects.
 
 CSV schema 3 adds recommendations. Schemas 1 and 2 remain supported for byte-identical rendering of earlier frozen exports.
+
+## Example inventory, validated November 13, 2026
+
+The example now has 23 feed URLs: the six-feed baseline plus 17 additional general-purpose sources selected from [PiHole-Blocklist's source document](https://github.com/mickpletcher/PiHole-Blocklist/blob/main/pihole-list-sources.md). That document has 45 rows, 42 enabled, not 57. Selection excludes disabled entries, opt-in Device/Policy service restrictions, the immutable CNAME snapshot, Matomo's analytics-referrer list, and the Someone Who Cares endpoint that returned HTTP 403. HaGeZi uses current raw `adblock/pro.txt` and `adblock/tif.txt` paths instead of obsolete `domains/` URLs.
+
+All 23 URLs downloaded during validation. 22 parsed completely; Block List Project malware remains explicitly partial because it includes 573 literal IP-address entries outside hostname matching. Overlap among feeds does not create independent votes. The text file is editable; these are comparison/recommendation sources, not automatically installed Pi-hole blocking lists.
