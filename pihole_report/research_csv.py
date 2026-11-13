@@ -14,8 +14,9 @@ from .delivery import BackupConfig, DeliveryError, preflight_backup, run_backup_
 
 from .domains import registrable_domain
 
-COLUMNS=('domain','hostname','cache_status','new_to_history','review_reason','review_action',
+LEGACY_COLUMNS=('domain','hostname','cache_status','new_to_history','review_reason','review_action',
          'window_start_utc','window_end_exclusive_utc','Block')
+COLUMNS=LEGACY_COLUMNS[:-1]+('RecommendedBlock','MatchedSources','SourceCheckStatus','SourcesCheckedAt','Block')
 
 
 def safe_cell(value):
@@ -27,8 +28,8 @@ def safe_cell(value):
     return text
 
 
-def render_csv(detail, snapshot_id, *, schema_version=2):
-    if type(schema_version) is not int or schema_version not in (1, 2):
+def render_csv(detail, snapshot_id, *, schema_version=3):
+    if type(schema_version) is not int or schema_version not in (1, 2, 3):
         raise ValueError("Unsupported CSV schema")
     research=detail['research']; rows=research['research_needed']; totals=detail['daily_totals']
     if not isinstance(rows,list) or type(research['research_needed_count']) is not int or len(rows)!=research['research_needed_count']:
@@ -45,13 +46,17 @@ def render_csv(detail, snapshot_id, *, schema_version=2):
     names=[r['hostname'] for r in rows]
     if len(set(names))!=len(names) or any(not isinstance(n,str) or not n for n in names):
         raise ValueError('Unique nonempty hostnames required')
-    out=io.StringIO(newline=''); writer=csv.writer(out,lineterminator='\r\n',quoting=csv.QUOTE_ALL);writer.writerow(COLUMNS if schema_version == 2 else COLUMNS[1:])
+    out=io.StringIO(newline=''); writer=csv.writer(out,lineterminator='\r\n',quoting=csv.QUOTE_ALL);writer.writerow(COLUMNS if schema_version == 3 else LEGACY_COLUMNS if schema_version == 2 else LEGACY_COLUMNS[1:])
     for row in sorted(rows,key=lambda r:r['hostname']):
         new=row['new_to_history']
         if new is not None and type(new) is not bool: raise ValueError('Invalid history flag')
         values=(row['hostname'],row['cache_status'],
             'unknown' if new is None else 'yes' if new else 'no',row['reason'],row['action'],start,end,'')
-        if schema_version == 2: values=(registrable_domain(row['hostname']),)+values
+        if schema_version >= 2: values=(registrable_domain(row['hostname']),)+values
+        if schema_version == 3:
+            check=detail.get('source_check',{}); match=check.get('rows',{}).get(row['hostname'],{})
+            values=values[:-1]+(match.get('recommended_block',''),'; '.join(match.get('matched_sources',[])),
+                match.get('check_status',check.get('status','not_checked')),check.get('checked_at',''),'')
         writer.writerow([safe_cell(v) for v in values])
     data=out.getvalue().encode('utf-8-sig')
     name=f"pihole-research-needed-{parsed[1].astimezone(timezone.utc).date().isoformat()}-{snapshot_id[:16]}.csv"

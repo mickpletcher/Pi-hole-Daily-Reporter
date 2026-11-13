@@ -1,0 +1,12 @@
+# Curated external comparison sources, 2026-11-13. Not copied from Pi-hole.
+# One direct HTTPS feed URL per line. Matches are recommendations, not automatic blocks.
+# StevenBlack consolidated hosts (ads/malware); sources overlap other feeds.
+https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+# OISD Small uses subdomain-aware ABP rules.
+https://small.oisd.nl
+# Peter Lowe ads/tracking hosts.
+https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
+# Block List Project security categories (one provenance family).
+https://blocklistproject.github.io/Lists/alt-version/malware-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/phishing-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/scam-nl.txt

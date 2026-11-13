@@ -122,3 +122,7 @@ overwrite existing files. Manual edits remain untouched.
 New research CSVs start with `domain`, then `hostname`; for example `apple.com`, `click.apple.com`. Domain is the registrable domain (eTLD+1), calculated offline using the bundled Public Suffix List including private suffixes. Multi-part suffixes such as `co.uk` and separate private-platform tenants are handled correctly. IP addresses, local/invalid names and public-suffix-only inputs produce an empty domain. The hostname remains unchanged and `Block` remains blank for new exports. Existing edited CSVs are never overwritten or migrated automatically.
 
 The vendored PSL snapshot is MPL-2.0 licensed (see its header); no DNS-history data is sent to a lookup service and no runtime network fetch is needed.
+
+## Source comparison
+
+New research CSVs can screen hostnames locally against a configurable list of current blocklist feeds. See [configuration, matching rules and limitations](docs/SOURCE_COMPARISON.md). Manual Block decisions remain separate.

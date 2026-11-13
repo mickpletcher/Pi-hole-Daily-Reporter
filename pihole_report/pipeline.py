@@ -19,6 +19,7 @@ from .integrations import IntegrationError, inventory_section, refresh_lists, re
 from .report import list_config, prepare_report, render
 from .health import data_health, render_data_health
 from .runlog import prune_logs, render_totals, research_status, snapshot_totals, write_log
+from .source_check import run_check, render_summary, SOURCE_FILE
 from .storage import connect, feedback, import_report, inventory, normalize
 
 
@@ -161,6 +162,9 @@ def _run_daily(root, dbpath, transport, password, *, base, site, now,
                 quality['status'] = 'limited'
             warnings = list(dict.fromkeys(warnings + quality['warnings']))
             research = research_status(db, incoming, new_to_catalog=new_names)
+            source_check = run_check(root / 'config' / SOURCE_FILE, [r['hostname'] for r in research['research_needed']])
+            if source_check['status'] == 'incomplete':
+                warnings.append('External blocklist comparison incomplete; see source diagnostics')
             report = render(db, snapshot_id, root, inv_text, newly_queued=prepared["added"])
             summary = render_data_health(quality)
             marker = '## Daily review shortlist'
@@ -169,6 +173,7 @@ def _run_daily(root, dbpath, transport, password, *, base, site, now,
             else:
                 report += '\n' + summary
             report += render_totals(totals)
+            report += render_summary(source_check)
             output = root / "memory/pihole-domain-review.md"
             write_text(output, report)
     finally:
@@ -186,7 +191,7 @@ def _run_daily(root, dbpath, transport, password, *, base, site, now,
     payload = {
         "event": "daily_report", "mode": "isolated-shadow",
         "status": "partial" if warnings else "complete", "snapshot_id": snapshot_id,
-        "site": site, "daily_totals": totals, "research": research,
+        "site": site, "daily_totals": totals, "research": research, "source_check": source_check,
         "collection_status": collection_status, "collection_import_succeeded": collection_import_succeeded,
         "data_health": quality, "new_measured_queries": measured,
         "inventory_status": inv_status, "curated_list_freshness": list_freshness,

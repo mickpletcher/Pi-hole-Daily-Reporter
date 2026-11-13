@@ -33,4 +33,4 @@ class LegacySchemaTests(unittest.TestCase):
         expected='"hostname","cache_status","new_to_history","review_reason","review_action","window_start_utc","window_end_exclusive_utc","Block"\r\n'
         self.assertEqual(old['data'],expected.encode('utf-8-sig'))
         self.assertEqual(old['schema_version'],1)
-        self.assertEqual(render_csv(detail,'fixture')['schema_version'],2)
+        self.assertEqual(render_csv(detail,'fixture')['schema_version'],3)
