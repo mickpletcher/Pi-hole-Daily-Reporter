@@ -1,4 +1,4 @@
-# Future updates
+# Future upgrades
 
 Prioritized upgrade recommendations for Pi-hole-Daily-Reporter.
 
