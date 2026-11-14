@@ -2,6 +2,22 @@
 
 Changes are recorded newest first. Dates use YYYY-MM-DD.
 
+## 2026-11-14 — Offline safety CI and completed-upgrade tracking
+
+- Added exact-PR-head GitHub Actions checks on Linux/macOS for Python 3.11–3.14,
+  pinned actions, read-only token permissions and no artifact uploads.
+- Added clean-environment offline test launcher with network-denying Python audit
+  hook, Markdown/local-link checker and synthetic schema 1–3 collision regressions.
+- Documented CI limitations and added the agent rule to archive verified upgrades
+  in `completed-upgrades.md`; roadmap remains pending hosted verification.
+- Validation: all 199 tests pass under the guarded runner on Python 3.12.14;
+  Markdown/local links and `git diff --check` pass. Hosted matrix pending.
+- Recorded separately applied repository settings: private vulnerability reporting,
+  dependency graph, Dependabot alerts/security updates and automatic deletion of
+  merged branches enabled; About URL points to repository documentation. Main
+  protection is awaiting owner confirmation and is not claimed active.
+- No running installation, live configuration, reports or accounts changed by CI.
+
 ## 2026-11-14 — Introduce ongoing change tracking
 
 - Added this root `change.log` as the package's ongoing change record, with a

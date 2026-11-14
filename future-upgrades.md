@@ -32,6 +32,9 @@ All upgrades must preserve these boundaries:
 
 ### 1. Add continuous integration for the existing safety tests
 
+**Implementation status:** Workflow and synthetic regressions added; hosted matrix
+verification is pending. See [CI documentation](docs/CI.md).
+
 **Why:** The repository has extensive synthetic unit tests but no checked-in
 GitHub Actions workflow. Every source change should exercise the existing
 collection, delivery, CSV and deployment safeguards automatically.

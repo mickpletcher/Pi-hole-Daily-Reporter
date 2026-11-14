@@ -35,3 +35,11 @@ edit does not require a second, recursive entry about itself.
 Before committing or submitting a change, verify that `change.log` describes the
 complete change. This requirement complements the roadmap-maintenance rule above
 and does not authorize deployment, account-setting changes, or other actions.
+
+## Archive completed upgrades
+
+When a listed upgrade is completed and its completion criteria are verified, move
+its description and validation evidence from `future-upgrades.md` into the root
+`completed-upgrades.md`. Do not label pending or unverified work completed. Retain
+the roadmap replenishment and reranking requirements above, and update `change.log`
+in the same change.

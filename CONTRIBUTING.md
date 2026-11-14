@@ -28,6 +28,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 PYTHONDONTWRITEBYTECODE=1 python3 -m pihole_report --help
 ```
 
+See [offline CI](docs/CI.md) for the exact-commit test matrix and local guarded
+runner.
+
 Tests use temporary synthetic fixtures and injected transports. Add regression
 tests for changed behavior. Record the Python version, commands, and results in
 your pull request. Review Markdown headings, relative links, and issue-template
