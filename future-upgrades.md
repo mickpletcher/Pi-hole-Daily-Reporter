@@ -2,11 +2,14 @@
 
 Prioritized upgrade recommendations for Pi-hole-Daily-Reporter.
 
-Reviewed against version 0.6.0, commit `dfbe0ca`. These are proposed upgrades,
+Reviewed against version 0.6.0; CI completed at commit `71907b2`. These are proposed upgrades,
 not implemented features or authorization to change a live installation.
 Rank numbers are global: complete Tier 1 before expanding into Tiers 2 and 3.
 Within each tier, lower numbers have higher importance. Priority reflects data
 integrity, trustworthy recommendations and operational reliability before convenience.
+
+Completed work and verification evidence are archived in
+[completed upgrades](completed-upgrades.md).
 
 ## Existing foundation
 
@@ -30,27 +33,7 @@ All upgrades must preserve these boundaries:
 
 ## Tier 1: Highest importance — reliability and evidence
 
-### 1. Add continuous integration for the existing safety tests
-
-**Implementation status:** Workflow and synthetic regressions added; hosted matrix
-verification is pending. See [CI documentation](docs/CI.md).
-
-**Why:** The repository has extensive synthetic unit tests but no checked-in
-GitHub Actions workflow. Every source change should exercise the existing
-collection, delivery, CSV and deployment safeguards automatically.
-
-**Upgrade:** Add an offline test workflow for supported Python versions, including
-Python 3.11, and macOS coverage for platform-specific behavior. Keep live feeds,
-credentials, email and OneDrive out of CI. Add a lightweight Markdown/local-link
-check for documentation-only changes.
-
-**Done when:** Pull requests show test results for their exact commit; fixtures
-cover CSV schemas 1–3, edited-file collisions, frozen retries and uncertain email
-holds. CI artifacts contain only synthetic data.
-
-**Starting points:** `tests/`, `pyproject.toml`, `README.md`.
-
-### 2. Make feed degradation visible in operational health
+### 1. Make feed degradation visible in operational health
 
 **Why:** `source_check.py` records individual feed failures, hashes and partial
 parses, but the read-only health interface is oriented around collection,
@@ -69,7 +52,7 @@ visible after a successful delivery, and no health check initiates network acces
 **Starting points:** `pihole_report/source_check.py`, `pihole_report/health.py`,
 `pihole_report/production.py`, `tests/test_source_check.py`.
 
-### 3. Preserve rule-level evidence for each recommendation
+### 2. Preserve rule-level evidence for each recommendation
 
 **Why:** CSVs currently identify matching source URLs, while feed metadata retains
 hashes and rule counts. Reviewers cannot see the exact rule and matching mode that
@@ -87,7 +70,7 @@ old frozen CSVs reproduce byte-for-byte.
 **Starting points:** `pihole_report/source_check.py`,
 `pihole_report/research_csv.py`, `docs/SOURCE_COMPARISON.md`.
 
-### 4. Add a safe end-to-end release validation harness
+### 3. Add a safe end-to-end release validation harness
 
 **Why:** Unit tests and source validation do not establish that a complete
 scheduled run generates, freezes, delivers and recovers the intended artifacts.
@@ -107,7 +90,7 @@ without claiming inbox receipt or cloud upload that has not been verified.
 
 ## Tier 2: Important — maintainability and review efficiency
 
-### 5. Add feed metadata and conservative change detection
+### 4. Add feed metadata and conservative change detection
 
 **Why:** The URL inventory is deliberately simple, but URLs alone do not describe
 purpose, overlap, ownership or an unexpected collapse in supported rule counts.
@@ -124,7 +107,7 @@ cannot silently enable service-wide blocking or change manual decisions.
 **Starting points:** `examples/blocklist-sources.txt`,
 `pihole_report/source_check.py`, `docs/SOURCE_COMPARISON.md`.
 
-### 6. Establish a reproducible Public Suffix List update process
+### 5. Establish a reproducible Public Suffix List update process
 
 **Why:** Domain extraction uses an offline vendored snapshot. This preserves
 privacy but requires deliberate maintenance as suffix and private-platform rules
@@ -141,7 +124,7 @@ private tenants remain separate and old frozen export identities remain recovera
 **Starting points:** `pihole_report/domains.py`,
 `pihole_report/public_suffix_data.py`, `tests/test_domains.py`.
 
-### 7. Add an explicit review-decision ledger
+### 6. Add an explicit review-decision ledger
 
 **Why:** The manual `Block` column is intentionally not imported today. Decisions
 made in one daily CSV therefore cannot yet become a structured, reusable review
@@ -159,7 +142,7 @@ resolution, source CSVs are untouched, and importing never applies Pi-hole rules
 **Starting points:** `pihole_report/research_csv.py`,
 `pihole_report/storage.py`, `pihole_report/cli.py`.
 
-### 8. Define retention and recovery-artifact lifecycle rules
+### 7. Define retention and recovery-artifact lifecycle rules
 
 **Why:** Recognized run logs already have 30-day cleanup and SQLite backups have
 configured retention, but frozen recovery artifacts and CSVs are retained without
@@ -176,6 +159,23 @@ is never included implicitly.
 
 **Starting points:** `pihole_report/production.py`,
 `pihole_report/runlog.py`, `pihole_report/delivery.py`, `README.md`.
+
+### 8. Measure safety-branch coverage and mutation resistance
+
+**Why:** A green CI suite confirms current assertions pass, but does not reveal
+untested branches or whether a regression could silently remove a safety hold.
+
+**Upgrade:** Measure branch coverage of delivery, frozen artifacts, CSV collisions
+and deployment gates using synthetic fixtures. Add a small, bounded mutation
+check that deliberately removes selected fail-closed checks and verifies the tests
+reject those changes. Keep results local/CI-only and dependencies pinned.
+
+**Done when:** Critical uncovered branches are documented and addressed; selected
+mutations of uncertain-send suppression, collision refusal and manifest checks are
+caught. No mutation run touches production data or changes the shipped package.
+
+**Starting points:** `tests/test_production.py`, `tests/test_delivery.py`,
+`tests/test_research_csv.py`, `tests/test_deployment.py`, `.github/workflows/offline-ci.yml`.
 
 ## Tier 3: Optional — performance and richer analysis
 
