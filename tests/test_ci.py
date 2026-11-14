@@ -43,7 +43,7 @@ class CITests(unittest.TestCase):
                     self.assertEqual(path.read_bytes(), edited)
 
     def test_docs_links_and_fences(self):
-        with tempfile.TemporaryDirectory() as temp, patch.object(docs, 'ROOT', Path(temp)):
+        with tempfile.TemporaryDirectory() as temp, patch.object(docs, 'ROOT', Path(temp).resolve()):
             root = Path(temp)
             target = root/'target.md'; target.write_text('# Valid heading\n')
             page = root/'page.md'
