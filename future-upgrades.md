@@ -249,5 +249,13 @@ manifest review before production execution.
 
 Reassess this ranking after each release. Move completed work into release notes
 with its commit and validation evidence instead of leaving it labeled future work.
+Whenever a listed upgrade is implemented, review this roadmap in the same change.
+If possible, add a new, useful recommendation grounded in the current package,
+with rationale, completion criteria and code references. Place it in the appropriate
+tier and rerank the remaining work. Do not add filler or relist completed features
+just to preserve the number of recommendations. If no worthwhile replacement is
+identified, note that briefly in the change summary. See [contributor and agent
+guidance](AGENTS.md).
+
 Implementation, production rollout and any new data-sharing integration are
 separate decisions; this roadmap does not enable them.
