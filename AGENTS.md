@@ -16,3 +16,22 @@ replacement is identified, record that briefly in the change summary instead.
 
 This maintenance rule does not authorize implementing additional recommendations,
 changing a live deployment or modifying user data.
+
+## Update the change log for every change
+
+Every change to this package must update the root `change.log` in the same commit
+or pull request. This includes code, documentation, tests, dependencies,
+configuration, build and release tooling, and repository automation or guidance.
+Record relevant GitHub repository-setting changes there as well when applied.
+
+Add a dated entry, newest first, describing what changed and why, the checks
+actually performed and their results, and any compatibility or operational
+impact. Distinguish source changes from deployment changes: never imply that a
+live installation was updated or a check passed unless verified. Keep entries
+concise, preserve previous history, and do not include secrets or private user
+data. Updating an existing entry for the same change is sufficient; a change-log
+edit does not require a second, recursive entry about itself.
+
+Before committing or submitting a change, verify that `change.log` describes the
+complete change. This requirement complements the roadmap-maintenance rule above
+and does not authorize deployment, account-setting changes, or other actions.

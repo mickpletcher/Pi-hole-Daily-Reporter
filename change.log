@@ -1,0 +1,26 @@
+# Change log
+
+Changes are recorded newest first. Dates use YYYY-MM-DD.
+
+## 2026-11-14 — Introduce ongoing change tracking
+
+- Added this root `change.log` as the package's ongoing change record, with a
+  narrowly scoped `.gitignore` exception; operational logs remain ignored.
+- Added an `AGENTS.md` rule requiring a change-log update with every package
+  change, including documentation and project guidance, and recording relevant
+  GitHub repository-setting changes when applied.
+- The rule requires truthful validation evidence, preservation of prior history,
+  and a clear distinction between source publication and live deployment.
+- Scope: documentation only; no runtime behavior, settings, existing reports, or
+  live installation changed.
+- Validation: `git diff --check` passed; all 197 offline unit tests passed with
+  Python 3.12.14 (`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -q`);
+  existing roadmap guidance preserved.
+
+## Earlier history
+
+This log begins with the change-tracking update. It is not a retrospective record
+of every earlier change. The Git history is the authoritative record for work
+before this file was introduced; the immediately preceding commit is
+`cd26e01470d2edb7a3541fa522242b7cdec19b21` (community policies and contribution
+templates).

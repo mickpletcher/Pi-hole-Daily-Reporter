@@ -257,3 +257,6 @@ __marimo__/
 
 # Generated review lists contain private DNS observations.
 *.csv
+
+# Version the root change record while keeping operational logs ignored.
+!/change.log
