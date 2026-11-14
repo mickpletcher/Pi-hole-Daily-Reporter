@@ -126,3 +126,16 @@ The vendored PSL snapshot is MPL-2.0 licensed (see its header); no DNS-history d
 ## Source comparison
 
 New research CSVs can screen hostnames locally against a configurable list of current blocklist feeds. See [configuration, matching rules and limitations](docs/SOURCE_COMPARISON.md). Manual Block decisions remain separate.
+
+## Community and contributions
+
+See [contributing](CONTRIBUTING.md), our [Code of Conduct](CODE_OF_CONDUCT.md),
+[security policy](SECURITY.md), and [accessibility statement](ACCESSIBILITY.md). Use the
+[issue templates](https://github.com/mickpletcher/Pi-hole-Daily-Reporter/issues/new/choose)
+for bugs, feature requests, and accessibility barriers. Pull requests include a
+review checklist. For vulnerabilities, check the repository's
+[Security tab](https://github.com/mickpletcher/Pi-hole-Daily-Reporter/security)
+for a private reporting route; never post sensitive details in public issues.
+The project is [MIT licensed](LICENSE). The prioritized
+[upgrade roadmap](future-upgrades.md) and [contributor guidance](AGENTS.md)
+explain how planned improvements are maintained.
